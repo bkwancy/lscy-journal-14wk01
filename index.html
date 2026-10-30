@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="善與堯" />
+<meta name="theme-color" content="#F7F1E8" />
+<title>善與堯</title>
+<style>
+  :root {
+    --paper: #F7F1E8;
+    --surface: #FFFDF9;
+    --ink: #24303D;
+    --plum: #7A2E3B;
+    --gold: #B98A2E;
+    --muted: #9C9284;
+    --divider: #E4D9C7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #status { padding: 40px 20px; font-size: 13px; color: var(--muted); }
+  #app { min-height: 100vh; display: none; }
+  .header {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--paper);
+    padding: 18px 16px 10px;
+    display: flex; justify-content: space-between; align-items: baseline;
+    border-bottom: 1px solid var(--divider);
+  }
+  .brand { font-style: italic; font-size: 20px; }
+  .screen { padding: 16px 16px calc(90px + env(safe-area-inset-bottom)); }
+  .card {
+    background: var(--surface); border-radius: 8px; padding: 16px; margin-bottom: 12px;
+    box-shadow: 0 1px 2px rgba(36,48,61,0.06);
+  }
+  .btn {
+    border: none; border-radius: 24px; padding: 10px 22px;
+    background: var(--plum); color: var(--surface);
+    font-weight: 500; font-size: 14px; cursor: pointer;
+  }
+  .btn:disabled { opacity: 0.5; }
+  .btn.ghost { background: transparent; color: var(--plum); border: 1px solid var(--plum); }
+  .tabbar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--surface); border-top: 1px solid var(--divider);
+    display: flex; padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+  }
+  .tabbtn {
+    flex: 1; border: none; background: none; display: flex;
+    flex-direction: column; align-items: center; gap: 3px; cursor: pointer;
+    color: var(--muted); font-size: 10px; padding: 4px 0;
+  }
+  .tabbtn.active { color: var(--plum); }
+  .tabbtn .icon { font-size: 18px; }
+  input, textarea {
+    width: 100%; border: none; border-bottom: 1px solid var(--divider);
+    padding: 10px 2px; font-size: 16px; color: var(--ink); background: transparent;
+    outline: none; font-family: inherit; border-radius: 0;
+  }
+  textarea {
+    border: 1px solid var(--divider); border-radius: 8px; padding: 16px;
+    line-height: 1.5; resize: none; background: var(--surface);
+  }
+  .compose { display: flex; flex-direction: column; height: calc(100vh - 150px); height: calc(100dvh - 150px); }
+  .entry { display: flex; margin-bottom: 18px; }
+  .entry.self { justify-content: flex-end; }
+  .entry.other { justify-content: flex-start; }
+  .entrycard {
+    max-width: 88%; width: 100%; background: var(--surface); border-radius: 6px;
+    padding: 14px 16px; box-shadow: 0 1px 2px rgba(36,48,61,0.06);
+  }
+  .emojirow { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .emojibtn { border: 1px solid var(--divider); background: var(--surface); border-radius: 6px; font-size: 16px; padding: 4px 8px; cursor: pointer; }
+  .emojibtn.selected { border-color: var(--plum); background: var(--paper); }
+  .reaction { font-size: 13px; background: var(--paper); border-radius: 6px; padding: 6px 10px; display: flex; gap: 8px; margin-top: 6px; }
+  .reaction .who { color: var(--muted); font-size: 11px; }
+  .link-btn { border: none; background: none; color: var(--muted); font-size: 12px; cursor: pointer; padding: 6px 0; }
+  .daydot { flex: 1; min-width: 0; height: 20px; border-radius: 4px; background: var(--paper); display: flex; align-items: center; justify-content: center; font-size: 11px; }
+  .moodrow { display: flex; align-items: center; gap: 4px; margin-bottom: 6px; }
+  .moodlabel { font-size: 10px; color: var(--muted); width: 52px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .stat-big { font-size: 34px; text-align: center; }
+  .stat-sub { font-size: 12px; color: var(--muted); text-align: center; margin-top: 2px; }
+  label { font-size: 11px; color: var(--muted); display: block; margin-top: 12px; }
+  label:first-child { margin-top: 0; }
+  .calnav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .calnavbtn { border: none; background: var(--surface); border-radius: 8px; width: 36px; height: 36px; font-size: 16px; cursor: pointer; box-shadow: 0 1px 2px rgba(36,48,61,0.06); }
+  .calmonth { font-size: 15px; font-weight: 600; }
+  .calgrid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .calweekday { text-align: center; font-size: 10px; color: var(--muted); padding-bottom: 4px; }
+  .calcell { aspect-ratio: 1; border-radius: 8px; background: var(--surface); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; position: relative; padding: 2px; }
+  .calcell.empty { background: transparent; cursor: default; }
+  .calcell.today { box-shadow: inset 0 0 0 1.5px var(--ink); }
+  .calcell.selected { background: var(--paper); box-shadow: inset 0 0 0 2px var(--plum); }
+  .calcell .calnum { font-size: 12px; }
+  .calcell .calmoods { font-size: 9px; line-height: 1; margin-top: 1px; }
+  .calcell .caldots { display: flex; gap: 2px; margin-top: 1px; }
+  .caldot { width: 4px; height: 4px; border-radius: 50%; }
+  .calstar { position: absolute; top: 1px; right: 2px; font-size: 8px; }
+  .caldetail-entry { padding: 10px 0; border-bottom: 1px solid var(--divider); }
+  .caldetail-entry:last-child { border-bottom: none; }
+  .loginwrap { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+  .loginform { width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 14px; align-items: stretch; }
+  .loginform .btn { margin-top: 8px; }
+  .banner { margin: 10px 16px 0; padding: 10px 12px; border-radius: 8px; background: #F3DCDC; color: var(--plum); font-size: 12px; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<div id="status">Loading…</div>
+<div id="app"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function () {
+  "use strict";
+
+  // Publishable key: designed to live in client code. Privacy comes from Row Level Security, not from hiding this.
+  var SUPABASE_URL = "https://esmgwbqxioinkyhmejmp.supabase.co";
+  var SUPABASE_KEY = "sb_publishable_TZDowe-IffafqovQm4sLQw_-9Im1bGv";
+  var EMOJIS = ["😊","😔","😍","😤","😴","🥳","😰","🙏","😂","🥰"];
+  var POLL_MS = 60000;
+
+  var state = {
+    sb: null, user: null, userId: null, loaded: false, refreshing: false,
+    profiles: [], couple: null, entries: [], reactions: [], moods: [],
+    tab: "dashboard",
+    calMonth: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+    calSelected: localYMD(new Date()),
+    login: { step: "email", usePassword: false, email: "", password: "", code: "", busy: false, msg: "", err: "" },
+    draftId: null, draftText: "", draftStatus: "",
+    error: ""
+  };
+
+  // ---------- small helpers ----------
+
+  function $(id) { return document.getElementById(id); }
+  function pad2(n) { return n < 10 ? "0" + n : "" + n; }
+  function localYMD(d) { return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
+  function parseYMD(s) {
+    if (!s) return null;
+    var p = String(s).slice(0, 10).split("-");
+    if (p.length !== 3) return null;
+    return { y: +p[0], m: +p[1] - 1, d: +p[2] };
+  }
+  function daysTogether(s) {
+    var p = parseYMD(s);
+    if (!p) return null;
+    var start = new Date(p.y, p.m, p.d);
+    var now = new Date(); now.setHours(0, 0, 0, 0);
+    var diff = Math.round((now - start) / 86400000);
+    return diff >= 0 ? diff : null;
+  }
+  function daysToBirthday(s) {
+    var p = parseYMD(s);
+    if (!p) return null;
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    var next = new Date(today.getFullYear(), p.m, p.d);
+    if (next < today) next = new Date(today.getFullYear() + 1, p.m, p.d);
+    return Math.round((next - today) / 86400000);
+  }
+  function sameMonthDay(s, m, d) {
+    var p = parseYMD(s);
+    return !!p && p.m === m && p.d === d;
+  }
+
+  function showStatus(msg) {
+    var s = $("status"); s.style.display = "block"; s.style.color = ""; s.textContent = msg;
+    $("app").style.display = "none";
+  }
+  function hideStatus() { $("status").style.display = "none"; $("app").style.display = "block"; }
+  function showFatal(msg) {
+    var s = $("status"); s.style.display = "block"; s.style.color = "#7A2E3B";
+    s.style.whiteSpace = "pre-wrap"; s.textContent = "Something broke:\n" + msg;
+    $("app").style.display = "none";
+  }
+
+  function el(tag, attrs, children) {
+    var node = document.createElement(tag);
+    attrs = attrs || {};
+    Object.keys(attrs).forEach(function (k) {
+      var v = attrs[k];
+      if (v === null || v === undefined || v === false) return;
+      if (k === "class") node.className = v;
+      else if (k === "text") node.textContent = v;
+      else if (k === "value") node.value = v;
+      else if (k.indexOf("on") === 0 && typeof v === "function") node.addEventListener(k.slice(2).toLowerCase(), v);
+      else node.setAttribute(k, v);
+    });
+    (children || []).forEach(function (c) { if (c) node.appendChild(c); });
+    return node;
+  }
+
+  function profileById(id) { return state.profiles.find(function (p) { return p.id === id; }) || null; }
+  function me() { return profileById(state.userId); }
+  function partner() { return state.profiles.find(function (p) { return p.id !== state.userId; }) || null; }
+  function nameOf(id) { var p = profileById(id); return p && p.name ? p.name : "Unknown"; }
+  function colorVar(id) { return id === state.userId ? "var(--plum)" : "var(--gold)"; }
+  function colorHex(id) { return id === state.userId ? "#7A2E3B" : "#B98A2E"; }
+  function peopleOrdered() { return [me(), partner()].filter(Boolean); }
+
+  function publishedEntries() {
+    return state.entries.filter(function (e) { return e.status === "published"; });
+  }
+  function entryTime(e) { return new Date(e.published_at || e.created_at); }
+
+  function specialLabelFor(m, d) {
+    var labels = [];
+    peopleOrdered().forEach(function (p) {
+      if (sameMonthDay(p.birthday, m, d)) labels.push(p.name + "'s birthday");
+    });
+    if (state.couple && sameMonthDay(state.couple.anniversary, m, d)) labels.push("Anniversary");
+    return labels;
+  }
+
+  function setError(ctx, err) {
+    var msg = err && err.message ? err.message : String(err);
+    console.error(ctx + ":", err);
+    state.error = ctx + ": " + msg;
+    safeRender();
+  }
+
+  // ---------- data ----------
+
+  async function loadAll() {
+    var sb = state.sb;
+    var res = await Promise.all([
+      sb.from("profiles").select("id,name,birthday,couple_id"),
+      sb.from("entries").select("*").order("created_at", { ascending: false }),
+      sb.from("reactions").select("*"),
+      sb.from("moods").select("*")
+    ]);
+    for (var i = 0; i < res.length; i++) { if (res[i].error) throw res[i].error; }
+    state.profiles = res[0].data || [];
+    state.entries = res[1].data || [];
+    state.reactions = res[2].data || [];
+    state.moods = res[3].data || [];
+
+    var mine = me();
+    if (mine && mine.couple_id) {
+      var c = await sb.from("couples").select("*").eq("id", mine.couple_id).maybeSingle();
+      if (c.error) throw c.error;
+      state.couple = c.data || null;
+    } else {
+      state.couple = null;
+    }
+
+    if (!state.draftId) {
+      var d = state.entries.find(function (e) { return e.author_id === state.userId && e.status === "draft"; });
+      if (d) { state.draftId = d.id; state.draftText = d.content || ""; }
+    }
+    state.loaded = true;
+  }
+
+  function upsertLocalEntry(row) {
+    var i = state.entries.findIndex(function (e) { return e.id === row.id; });
+    if (i >= 0) state.entries[i] = row; else state.entries.unshift(row);
+  }
+
+  async function refresh() {
+    if (!state.userId || state.refreshing) return;
+    state.refreshing = true;
+    try { await loadAll(); state.error = ""; safeRender(); }
+    catch (err) { setError("Refreshing", err); }
+    finally { state.refreshing = false; }
+  }
+
+  // ---------- auth ----------
+
+  function friendly(err) {
+    var m = (err && err.message) ? err.message : String(err);
+    if (/rate limit/i.test(m)) return "Too many emails sent recently. Wait a while, or sign in with your password.";
+    if (/signups? not allowed|not allowed for otp/i.test(m)) return "That email isn't registered for this app.";
+    if (/invalid login credentials/i.test(m)) return "Email or password is wrong.";
+    if (/token has expired|invalid/i.test(m)) return "That code is wrong or expired. Request a new one.";
+    return m;
+  }
+
+  async function sendCode() {
+    var L = state.login;
+    if (!L.email.trim()) { L.err = "Enter your email."; render(); return; }
+    L.busy = true; L.err = ""; L.msg = ""; render();
+    try {
+      var r = await state.sb.auth.signInWithOtp({
+        email: L.email.trim(),
+        options: { shouldCreateUser: false, emailRedirectTo: location.origin + location.pathname }
+      });
+      if (r.error) throw r.error;
+      L.step = "code"; L.code = "";
+      L.msg = "Check your email. Type the code here (best on the home-screen app), or tap the link in the email.";
+    } catch (err) { L.err = friendly(err); }
+    L.busy = false; render();
+  }
+
+  async function verifyCode() {
+    var L = state.login;
+    if (!L.code.trim()) { L.err = "Enter the code from the email."; render(); return; }
+    L.busy = true; L.err = ""; render();
+    try {
+      var r = await state.sb.auth.verifyOtp({ email: L.email.trim(), token: L.code.trim(), type: "email" });
+      if (r.error) throw r.error;
+      L.busy = false;
+      await startSession(r.data.session);
+      return;
+    } catch (err) { L.err = friendly(err); }
+    L.busy = false; render();
+  }
+
+  async function passwordLogin() {
+    var L = state.login;
+    if (!L.email.trim() || !L.password) { L.err = "Enter your email and password."; render(); return; }
+    L.busy = true; L.err = ""; render();
+    try {
+      var r = await state.sb.auth.signInWithPassword({ email: L.email.trim(), password: L.password });
+      if (r.error) throw r.error;
+      L.busy = false; L.password = "";
+      await startSession(r.data.session);
+      return;
+    } catch (err) { L.err = friendly(err); }
+    L.busy = false; render();
+  }
+
+  async function signOut() {
+    try { await state.sb.auth.signOut(); }
+    catch (err) { console.error("Sign out:", err); }
+    resetSession();
+  }
+
+  function resetSession() {
+    state.user = null; state.userId = null; state.loaded = false;
+    state.profiles = []; state.couple = null; state.entries = []; state.reactions = []; state.moods = [];
+    state.draftId = null; state.draftText = ""; state.draftStatus = ""; state.error = "";
+    state.tab = "dashboard";
+    state.login = { step: "email", usePassword: false, email: "", password: "", code: "", busy: false, msg: "", err: "" };
+    hideStatus(); render();
+  }
+
+  async function startSession(session) {
+    if (!session || !session.user) { resetSession(); return; }
+    if (state.userId === session.user.id && state.loaded) return;
+    state.user = session.user; state.userId = session.user.id;
+    state.tab = "dashboard";
+    showStatus("Loading…");
+    try { await loadAll(); state.error = ""; }
+    catch (err) { console.error("Loading:", err); state.error = "Loading: " + (err && err.message ? err.message : err); }
+    hideStatus(); render();
+  }
+
+  // ---------- actions ----------
+
+  var saveTimer = null;
+  var saveChain = Promise.resolve();
+  var statusSpan = null;
+
+  function setDraftStatus(t) {
+    state.draftStatus = t;
+    if (statusSpan && document.body.contains(statusSpan)) statusSpan.textContent = t;
+  }
+
+  async function saveDraftNow() {
+    var text = state.draftText;
+    var mine = me();
+    if (!mine || !mine.couple_id) throw new Error("Account is not paired yet.");
+    var r;
+    if (!state.draftId) {
+      if (!text.trim()) return;
+      r = await state.sb.from("entries")
+        .insert({ couple_id: mine.couple_id, author_id: state.userId, content: text, status: "draft" })
+        .select().single();
+      if (r.error) throw r.error;
+      state.draftId = r.data.id;
+    } else {
+      r = await state.sb.from("entries").update({ content: text }).eq("id", state.draftId).select().single();
+      if (r.error) throw r.error;
+    }
+    upsertLocalEntry(r.data);
+    setDraftStatus("Saved");
+  }
+
+  function queueDraftSave() {
+    saveChain = saveChain.then(saveDraftNow).catch(function (err) {
+      setDraftStatus("Not saved");
+      setError("Saving draft", err);
+    });
+    return saveChain;
+  }
+
+  function flushDraft() {
+    if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; queueDraftSave(); }
+  }
+
+  async function publishDraft() {
+    var text = state.draftText.trim();
+    if (!text) return;
+    if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+    try {
+      await saveChain;
+      await saveDraftNow();
+      if (!state.draftId) throw new Error("Draft was not saved.");
+      var r = await state.sb.from("entries")
+        .update({ status: "published", published_at: new Date().toISOString() })
+        .eq("id", state.draftId).select().single();
+      if (r.error) throw r.error;
+      upsertLocalEntry(r.data);
+      state.draftId = null; state.draftText = ""; state.draftStatus = "";
+      state.error = ""; state.tab = "feed"; render();
+    } catch (err) { setError("Publishing", err); }
+  }
+
+  async function addReaction(entryId, emoji, text) {
+    try {
+      var mine = me();
+      var r = await state.sb.from("reactions")
+        .insert({ entry_id: entryId, couple_id: mine.couple_id, author_id: state.userId, emoji: emoji, text: text || "" })
+        .select().single();
+      if (r.error) throw r.error;
+      state.reactions.push(r.data); state.error = ""; render();
+    } catch (err) { setError("Sending reaction", err); }
+  }
+
+  async function setMood(emoji) {
+    try {
+      var mine = me();
+      var today = localYMD(new Date());
+      var r = await state.sb.from("moods")
+        .upsert({ couple_id: mine.couple_id, user_id: state.userId, date: today, emoji: emoji }, { onConflict: "user_id,date" })
+        .select().single();
+      if (r.error) throw r.error;
+      state.moods = state.moods.filter(function (m) { return !(m.user_id === state.userId && m.date === today); });
+      state.moods.push(r.data); state.error = ""; render();
+    } catch (err) { setError("Saving mood", err); }
+  }
+
+  async function saveSettings(name, birthday, anniversary) {
+    var mine = me();
+    var wantName = name.trim() || mine.name;
+    var wantBday = birthday || null;
+    var wantAnn = anniversary || null;
+    try {
+      var out = await Promise.all([
+        state.sb.from("profiles").update({ name: wantName, birthday: wantBday }).eq("id", state.userId),
+        state.sb.from("couples").update({ anniversary: wantAnn }).eq("id", mine.couple_id)
+      ]);
+      for (var i = 0; i < out.length; i++) { if (out[i].error) throw out[i].error; }
+      await loadAll();
+      // RLS can reject an update without raising an error, so confirm the values really changed.
+      var now = me();
+      var annNow = state.couple ? state.couple.anniversary : null;
+      if (!now || now.name !== wantName || (now.birthday || null) !== wantBday || (annNow || null) !== wantAnn) {
+        throw new Error("The database did not accept the change (permissions). Nothing was saved.");
+      }
+      state.error = ""; render();
+    } catch (err) { setError("Saving settings", err); }
+  }
+
+  // ---------- render ----------
+
+  function render() {
+    var app = $("app");
+    app.innerHTML = "";
+    statusSpan = null;
+    if (!state.user) { app.appendChild(renderLogin()); return; }
+    var mine = me();
+    if (!mine || !mine.couple_id) { app.appendChild(renderUnpaired(mine)); return; }
+    app.appendChild(renderHeader());
+    if (state.error) app.appendChild(el("div", { class: "banner", text: state.error }));
+    var screen;
+    if (state.tab === "feed") screen = renderFeed();
+    else if (state.tab === "compose") screen = renderCompose();
+    else if (state.tab === "calendar") screen = renderCalendar();
+    else if (state.tab === "settings") screen = renderSettings();
+    else screen = renderDashboard();
+    app.appendChild(screen);
+    app.appendChild(renderTabbar());
+  }
+
+  // Background refreshes must never wipe what someone is typing.
+  function safeRender() {
+    var a = document.activeElement;
+    if (a && (a.tagName === "INPUT" || a.tagName === "TEXTAREA")) return;
+    render();
+  }
+
+  function renderLogin() {
+    var L = state.login;
+    var wrap = el("div", { class: "loginwrap" });
+    wrap.appendChild(el("div", { class: "brand", style: "font-size:28px;margin-bottom:8px;", text: "善與堯" }));
+    var sub = L.step === "code" ? "Enter the code from your email" : (L.usePassword ? "Sign in with your password" : "Sign in with your email");
+    wrap.appendChild(el("div", { style: "color:var(--muted);font-size:13px;margin-bottom:28px;", text: sub }));
+
+    var form = el("form", { class: "loginform", onsubmit: function (e) {
+      e.preventDefault();
+      if (L.busy) return;
+      if (L.step === "code") verifyCode(); else if (L.usePassword) passwordLogin(); else sendCode();
+    } });
+
+    if (L.step === "code") {
+      form.appendChild(el("div", { style: "font-size:13px;color:var(--muted);text-align:center;", text: "Sent to " + L.email }));
+      var codeInput = el("input", { type: "text", inputmode: "numeric", autocomplete: "one-time-code", placeholder: "Code", maxlength: "10", value: L.code });
+      codeInput.addEventListener("input", function (e) { L.code = e.target.value; });
+      form.appendChild(codeInput);
+    } else {
+      var emailInput = el("input", { type: "email", inputmode: "email", autocomplete: "email", autocapitalize: "none", autocorrect: "off", placeholder: "Email", value: L.email });
+      emailInput.addEventListener("input", function (e) { L.email = e.target.value; });
+      form.appendChild(emailInput);
+      if (L.usePassword) {
+        var pwInput = el("input", { type: "password", autocomplete: "current-password", placeholder: "Password", value: L.password });
+        pwInput.addEventListener("input", function (e) { L.password = e.target.value; });
+        form.appendChild(pwInput);
+      }
+    }
+
+    if (L.msg) form.appendChild(el("div", { style: "font-size:12px;color:var(--muted);line-height:1.4;", text: L.msg }));
+    if (L.err) form.appendChild(el("div", { style: "font-size:12px;color:var(--plum);line-height:1.4;", text: L.err }));
+
+    var label = L.busy ? "Please wait…" : (L.step === "code" || L.usePassword ? "Sign in" : "Email me a code");
+    form.appendChild(el("button", { class: "btn", type: "submit", text: label, disabled: L.busy ? "disabled" : null }));
+    wrap.appendChild(form);
+
+    var links = el("div", { style: "margin-top:18px;display:flex;flex-direction:column;align-items:center;gap:2px;" });
+    if (L.step === "code") {
+      links.appendChild(el("button", { class: "link-btn", type: "button", text: "Send a new code", onclick: function () { L.step = "email"; L.err = ""; L.msg = ""; sendCode(); } }));
+      links.appendChild(el("button", { class: "link-btn", type: "button", text: "Use a different email", onclick: function () { L.step = "email"; L.err = ""; L.msg = ""; render(); } }));
+    } else {
+      links.appendChild(el("button", { class: "link-btn", type: "button", text: L.usePassword ? "Use an email code instead" : "Use a password instead", onclick: function () { L.usePassword = !L.usePassword; L.err = ""; L.msg = ""; render(); } }));
+    }
+    wrap.appendChild(links);
+    return wrap;
+  }
+
+  function renderUnpaired(mine) {
+    var wrap = el("div", { class: "loginwrap" });
+    wrap.appendChild(el("div", { class: "brand", style: "font-size:24px;margin-bottom:12px;", text: "善與堯" }));
+    wrap.appendChild(el("div", { style: "font-size:14px;text-align:center;max-width:300px;line-height:1.5;margin-bottom:20px;",
+      text: mine ? "This account isn't paired with a couple yet." : "No profile was found for this account." }));
+    if (state.error) wrap.appendChild(el("div", { class: "banner", text: state.error }));
+    wrap.appendChild(el("button", { class: "btn ghost", text: "Sign out", onclick: signOut }));
+    return wrap;
+  }
+
+  function renderHeader() {
+    var h = el("div", { class: "header" });
+    h.appendChild(el("span", { class: "brand", text: "善與堯" }));
+    var right = el("span", { style: "display:flex;align-items:baseline;gap:12px;" });
+    right.appendChild(el("button", { class: "link-btn", text: "↻", style: "font-size:16px;", onclick: refresh }));
+    right.appendChild(el("span", { text: nameOf(state.userId), style: "font-size:11px;color:var(--plum);" }));
+    h.appendChild(right);
+    return h;
+  }
+
+  function reactionNode(r) {
+    var rc = el("div", { class: "reaction" });
+    rc.appendChild(el("span", { text: r.emoji }));
+    rc.appendChild(el("span", { class: "who", text: nameOf(r.author_id) }));
+    if (r.text) rc.appendChild(el("span", { text: r.text }));
+    return rc;
+  }
+
+  function renderFeed() {
+    var screen = el("div", { class: "screen" });
+    var list = publishedEntries().sort(function (a, b) { return entryTime(b) - entryTime(a); });
+    if (list.length === 0) {
+      screen.appendChild(el("div", { style: "padding:60px 24px;text-align:center;color:var(--muted);font-size:14px;", text: "Nothing published yet." }));
+      return screen;
+    }
+    list.forEach(function (entry) {
+      var isSelf = entry.author_id === state.userId;
+      var row = el("div", { class: "entry " + (isSelf ? "self" : "other") });
+      var edge = isSelf ? "border-right" : "border-left";
+      var card = el("div", { class: "entrycard", style: edge + ":3px solid " + colorHex(entry.author_id) + ";" });
+
+      var top = el("div", { style: "display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;" });
+      top.appendChild(el("span", { text: nameOf(entry.author_id), style: "font-size:12px;font-weight:600;color:" + colorVar(entry.author_id) + ";" }));
+      top.appendChild(el("span", { text: entryTime(entry).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }), style: "font-size:11px;color:var(--muted);" }));
+      card.appendChild(top);
+      card.appendChild(el("div", { text: entry.content, style: "font-size:16px;line-height:1.5;white-space:pre-wrap;" }));
+
+      state.reactions.filter(function (r) { return r.entry_id === entry.id; }).forEach(function (r) { card.appendChild(reactionNode(r)); });
+
+      var reactBox = el("div", { style: "margin-top:10px;" });
+      var open = false, replyText = "";
+      var draw = function () {
+        reactBox.innerHTML = "";
+        if (!open) {
+          reactBox.appendChild(el("button", { class: "link-btn", text: "react", onclick: function () { open = true; draw(); } }));
+          return;
+        }
+        var emojiRow = el("div", { class: "emojirow" });
+        EMOJIS.forEach(function (em) {
+          emojiRow.appendChild(el("button", { class: "emojibtn", text: em, onclick: function () { addReaction(entry.id, em, replyText.trim()); } }));
+        });
+        reactBox.appendChild(emojiRow);
+        var inputRow = el("div", { style: "display:flex;gap:6px;margin-top:8px;" });
+        var input = el("input", { placeholder: "Add a note (optional)", value: replyText });
+        input.addEventListener("input", function (e) { replyText = e.target.value; });
+        inputRow.appendChild(input);
+        inputRow.appendChild(el("button", { class: "link-btn", text: "✕", onclick: function () { open = false; draw(); } }));
+        reactBox.appendChild(inputRow);
+      };
+      draw();
+      card.appendChild(reactBox);
+
+      row.appendChild(card);
+      screen.appendChild(row);
+    });
+    return screen;
+  }
+
+  function renderCompose() {
+    var screen = el("div", { class: "screen compose" });
+    var textarea = el("textarea", { placeholder: "What's today been like?", style: "flex:1;", value: state.draftText });
+    textarea.addEventListener("input", function () {
+      state.draftText = textarea.value;
+      setDraftStatus("Saving…");
+      if (saveTimer) clearTimeout(saveTimer);
+      saveTimer = setTimeout(function () { saveTimer = null; queueDraftSave(); }, 700);
+    });
+    var bottom = el("div", { style: "display:flex;justify-content:space-between;align-items:center;margin-top:10px;" });
+    statusSpan = el("span", { style: "font-size:11px;color:var(--muted);", text: state.draftStatus || (state.draftId ? "Draft saved" : "") });
+    bottom.appendChild(statusSpan);
+    bottom.appendChild(el("button", { class: "btn", text: "Publish →", onclick: publishDraft }));
+    screen.appendChild(textarea);
+    screen.appendChild(bottom);
+    return screen;
+  }
+
+  function renderDashboard() {
+    var screen = el("div", { class: "screen" });
+
+    var needs = publishedEntries().filter(function (e) {
+      if (e.author_id === state.userId) return false;
+      return !state.reactions.some(function (r) { return r.entry_id === e.id && r.author_id === state.userId; });
+    }).sort(function (a, b) { return entryTime(b) - entryTime(a); });
+
+    if (needs.length > 0) {
+      var fb = el("div", { class: "card", style: "border:1px solid var(--plum);" });
+      fb.appendChild(el("div", { text: "Needs your feedback (" + needs.length + ")", style: "font-size:12px;font-weight:600;color:var(--plum);margin-bottom:10px;" }));
+      needs.forEach(function (entry) {
+        var item = el("div", { style: "margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--divider);" });
+        var top = el("div", { style: "display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;" });
+        top.appendChild(el("span", { text: nameOf(entry.author_id), style: "font-size:12px;font-weight:600;color:" + colorVar(entry.author_id) + ";" }));
+        top.appendChild(el("span", { text: entryTime(entry).toLocaleDateString([], { month: "short", day: "numeric" }), style: "font-size:11px;color:var(--muted);" }));
+        item.appendChild(top);
+        var preview = entry.content.length > 80 ? entry.content.slice(0, 80) + "…" : entry.content;
+        item.appendChild(el("div", { text: preview, style: "font-size:14px;line-height:1.4;margin-bottom:8px;" }));
+        var quick = el("div", { class: "emojirow" });
+        EMOJIS.forEach(function (em) {
+          quick.appendChild(el("button", { class: "emojibtn", text: em, onclick: function () { addReaction(entry.id, em, ""); } }));
+        });
+        item.appendChild(quick);
+        fb.appendChild(item);
+      });
+      screen.appendChild(fb);
+    }
+
+    var together = daysTogether(state.couple ? state.couple.anniversary : null);
+    var stat = el("div", { class: "card", style: "text-align:center;" });
+    if (together !== null) {
+      stat.appendChild(el("div", { class: "stat-big", text: together.toLocaleString() }));
+      stat.appendChild(el("div", { class: "stat-sub", text: "days together · " + (together / 365.25).toFixed(1) + " years" }));
+    } else {
+      stat.appendChild(el("div", { style: "font-size:13px;color:var(--muted);", text: "Add your anniversary date in Settings" }));
+    }
+    screen.appendChild(stat);
+
+    var bRow = el("div", { style: "display:flex;gap:12px;margin-bottom:12px;" });
+    peopleOrdered().forEach(function (p) {
+      var days = daysToBirthday(p.birthday);
+      var label = days === null ? "no birthday set" : (days === 0 ? "birthday today 🎂" : "birthday in " + days + "d");
+      var c = el("div", { class: "card", style: "flex:1;text-align:center;margin-bottom:0;" });
+      c.appendChild(el("div", { text: p.name, style: "font-size:12px;font-weight:600;color:" + colorVar(p.id) + ";" }));
+      c.appendChild(el("div", { text: label, style: "font-size:11px;color:var(--muted);margin-top:4px;" }));
+      bRow.appendChild(c);
+    });
+    screen.appendChild(bRow);
+
+    var today = localYMD(new Date());
+    var mood = el("div", { class: "card" });
+    mood.appendChild(el("div", { text: "Today's mood", style: "font-size:12px;font-weight:600;margin-bottom:10px;" }));
+    var myMood = state.moods.find(function (m) { return m.user_id === state.userId && m.date === today; });
+    var moodRow = el("div", { class: "emojirow", style: "margin-top:0;" });
+    EMOJIS.forEach(function (em) {
+      moodRow.appendChild(el("button", { class: "emojibtn" + (myMood && myMood.emoji === em ? " selected" : ""), text: em, onclick: function () { setMood(em); } }));
+    });
+    mood.appendChild(moodRow);
+    screen.appendChild(mood);
+
+    var trail = el("div", { class: "card" });
+    trail.appendChild(el("div", { text: "Last 14 days", style: "font-size:12px;font-weight:600;margin-bottom:10px;" }));
+    var days14 = [];
+    for (var i = 13; i >= 0; i--) { var d = new Date(); d.setDate(d.getDate() - i); days14.push(localYMD(d)); }
+    peopleOrdered().forEach(function (p) {
+      var row = el("div", { class: "moodrow" });
+      row.appendChild(el("span", { class: "moodlabel", text: p.name }));
+      var dots = el("div", { style: "display:flex;gap:3px;flex:1;min-width:0;" });
+      days14.forEach(function (day) {
+        var m = state.moods.find(function (mm) { return mm.user_id === p.id && mm.date === day; });
+        dots.appendChild(el("div", { class: "daydot", text: m ? m.emoji : "" }));
+      });
+      row.appendChild(dots);
+      trail.appendChild(row);
+    });
+    screen.appendChild(trail);
+    return screen;
+  }
+
+  function renderCalendar() {
+    var screen = el("div", { class: "screen" });
+    var y = state.calMonth.getFullYear();
+    var m = state.calMonth.getMonth();
+
+    var nav = el("div", { class: "calnav" });
+    nav.appendChild(el("button", { class: "calnavbtn", text: "‹", onclick: function () { state.calMonth = new Date(y, m - 1, 1); render(); } }));
+    nav.appendChild(el("div", { class: "calmonth", text: state.calMonth.toLocaleDateString([], { month: "long", year: "numeric" }) }));
+    nav.appendChild(el("button", { class: "calnavbtn", text: "›", onclick: function () { state.calMonth = new Date(y, m + 1, 1); render(); } }));
+    screen.appendChild(nav);
+
+    var grid = el("div", { class: "calgrid" });
+    ["S","M","T","W","T","F","S"].forEach(function (d) { grid.appendChild(el("div", { class: "calweekday", text: d })); });
+
+    var firstWeekday = new Date(y, m, 1).getDay();
+    var totalDays = new Date(y, m + 1, 0).getDate();
+    var todayStr = localYMD(new Date());
+    var published = publishedEntries();
+
+    for (var i = 0; i < firstWeekday; i++) grid.appendChild(el("div", { class: "calcell empty" }));
+
+    var drawDay = function (day) {
+      var dateStr = y + "-" + pad2(m + 1) + "-" + pad2(day);
+      var dayEntries = published.filter(function (e) { return localYMD(entryTime(e)) === dateStr; });
+      var dayMoods = state.moods.filter(function (mm) { return mm.date === dateStr; });
+      var special = specialLabelFor(m, day);
+
+      var cls = "calcell";
+      if (dateStr === todayStr) cls += " today";
+      if (dateStr === state.calSelected) cls += " selected";
+      var cell = el("div", { class: cls, onclick: function () { state.calSelected = dateStr; render(); } });
+      cell.appendChild(el("div", { class: "calnum", text: "" + day }));
+      if (dayMoods.length) cell.appendChild(el("div", { class: "calmoods", text: dayMoods.map(function (mm) { return mm.emoji; }).join("") }));
+      if (dayEntries.length) {
+        var dots = el("div", { class: "caldots" });
+        dayEntries.forEach(function (e) { dots.appendChild(el("span", { class: "caldot", style: "background:" + colorHex(e.author_id) + ";" })); });
+        cell.appendChild(dots);
+      }
+      if (special.length) cell.appendChild(el("span", { class: "calstar", text: "⭐" }));
+      grid.appendChild(cell);
+    };
+    for (var day = 1; day <= totalDays; day++) drawDay(day);
+    screen.appendChild(grid);
+
+    var sel = parseYMD(state.calSelected);
+    var selDate = new Date(sel.y, sel.m, sel.d);
+    var detail = el("div", { class: "card", style: "margin-top:16px;" });
+    detail.appendChild(el("div", { text: selDate.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" }), style: "font-size:13px;font-weight:600;margin-bottom:8px;" }));
+    var selSpecial = specialLabelFor(sel.m, sel.d);
+    if (selSpecial.length) detail.appendChild(el("div", { text: "⭐ " + selSpecial.join(", "), style: "font-size:12px;color:var(--gold);margin-bottom:10px;" }));
+    peopleOrdered().forEach(function (p) {
+      var mood = state.moods.find(function (mm) { return mm.user_id === p.id && mm.date === state.calSelected; });
+      if (mood) detail.appendChild(el("div", { text: p.name + ": " + mood.emoji, style: "font-size:13px;margin-bottom:4px;" }));
+    });
+    var selEntries = published.filter(function (e) { return localYMD(entryTime(e)) === state.calSelected; })
+      .sort(function (a, b) { return entryTime(a) - entryTime(b); });
+    if (!selEntries.length) {
+      detail.appendChild(el("div", { text: "No entries this day.", style: "font-size:13px;color:var(--muted);margin-top:8px;" }));
+    } else {
+      selEntries.forEach(function (entry) {
+        var de = el("div", { class: "caldetail-entry" });
+        de.appendChild(el("div", { text: nameOf(entry.author_id), style: "font-size:12px;font-weight:600;color:" + colorVar(entry.author_id) + ";margin-bottom:4px;" }));
+        de.appendChild(el("div", { text: entry.content, style: "font-size:14px;line-height:1.4;white-space:pre-wrap;" }));
+        state.reactions.filter(function (r) { return r.entry_id === entry.id; }).forEach(function (r) { de.appendChild(reactionNode(r)); });
+        detail.appendChild(de);
+      });
+    }
+    screen.appendChild(detail);
+    return screen;
+  }
+
+  function renderSettings() {
+    var screen = el("div", { class: "screen" });
+    var mine = me();
+    var other = partner();
+    var form = { name: mine.name || "", birthday: mine.birthday || "", anniversary: state.couple && state.couple.anniversary ? state.couple.anniversary : "" };
+
+    var c1 = el("div", { class: "card" });
+    c1.appendChild(el("label", { text: "Your name" }));
+    var nameInput = el("input", { value: form.name });
+    nameInput.addEventListener("input", function (e) { form.name = e.target.value; });
+    c1.appendChild(nameInput);
+    c1.appendChild(el("label", { text: "Your birthday" }));
+    var bInput = el("input", { type: "date", value: form.birthday });
+    bInput.addEventListener("input", function (e) { form.birthday = e.target.value; });
+    c1.appendChild(bInput);
+    if (state.user && state.user.email) c1.appendChild(el("div", { text: "Signed in as " + state.user.email, style: "font-size:11px;color:var(--muted);margin-top:14px;" }));
+    screen.appendChild(c1);
+
+    var c2 = el("div", { class: "card" });
+    c2.appendChild(el("label", { text: "Anniversary (shared)" }));
+    var aInput = el("input", { type: "date", value: form.anniversary });
+    aInput.addEventListener("input", function (e) { form.anniversary = e.target.value; });
+    c2.appendChild(aInput);
+    screen.appendChild(c2);
+
+    var c3 = el("div", { class: "card" });
+    c3.appendChild(el("div", { text: other ? other.name : "Partner", style: "font-size:12px;font-weight:600;color:var(--gold);" }));
+    c3.appendChild(el("div", { text: other ? (other.birthday ? "Birthday: " + other.birthday : "No birthday set yet. They add it on their own phone.") : "Not signed in yet.", style: "font-size:12px;color:var(--muted);margin-top:4px;" }));
+    screen.appendChild(c3);
+
+    screen.appendChild(el("button", { class: "btn", text: "✓ Save", style: "width:100%;", onclick: function () { saveSettings(form.name, form.birthday, form.anniversary); } }));
+    screen.appendChild(el("button", { class: "btn ghost", text: "Sign out", style: "width:100%;margin-top:12px;", onclick: signOut }));
+    return screen;
+  }
+
+  function renderTabbar() {
+    var bar = el("div", { class: "tabbar" });
+    var tabs = [
+      { id: "feed", label: "Feed", icon: "📖" },
+      { id: "compose", label: "Write", icon: "✏️" },
+      { id: "dashboard", label: "Us", icon: "📊" },
+      { id: "calendar", label: "Calendar", icon: "📅" },
+      { id: "settings", label: "Settings", icon: "⚙️" }
+    ];
+    tabs.forEach(function (t) {
+      bar.appendChild(el("button", {
+        class: "tabbtn" + (state.tab === t.id ? " active" : ""),
+        onclick: function () { if (state.tab === "compose") flushDraft(); state.tab = t.id; render(); }
+      }, [el("span", { class: "icon", text: t.icon }), el("span", { text: t.label })]));
+    });
+    return bar;
+  }
+
+  // ---------- boot ----------
+
+  async function boot() {
+    if (!window.supabase || !window.supabase.createClient) {
+      showFatal("Could not load the Supabase library from the internet. Check your connection or any content blocker, then reload.");
+      return;
+    }
+    try {
+      state.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+      });
+      // Do not call Supabase inside this callback (it can deadlock); hand off with setTimeout.
+      state.sb.auth.onAuthStateChange(function (event, session) {
+        if (event === "SIGNED_OUT") { setTimeout(resetSession, 0); return; }
+        var uid = session && session.user ? session.user.id : null;
+        if (uid && uid !== state.userId) setTimeout(function () { startSession(session); }, 0);
+      });
+      var r = await state.sb.auth.getSession();
+      if (r.error) throw r.error;
+      await startSession(r.data.session);
+    } catch (err) {
+      console.error("Boot:", err);
+      showFatal(err && err.message ? err.message : String(err));
+    }
+  }
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "hidden") flushDraft();
+    else refresh();
+  });
+  setInterval(function () { if (document.visibilityState === "visible") refresh(); }, POLL_MS);
+
+  boot();
+})();
+</script>
+</body>
+</html>
